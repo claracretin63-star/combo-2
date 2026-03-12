@@ -1,0 +1,17 @@
+function Team(){
+
+return(
+
+<div style={{padding:"40px"}}>
+
+<h2>Equipe</h2>
+
+<p>Liste des employés</p>
+
+</div>
+
+)
+
+}
+
+export default Team
