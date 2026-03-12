@@ -6,13 +6,21 @@ import Planning from "./Planning";
 import Payroll from "./Payroll";
 
 const INITIAL_EMPLOYEES = ["Allan", "Lea", "Clara", "Tony", "Karim"];
+const INITIAL_PINS = {
+  Allan: "1111",
+  Lea: "2222",
+  Clara: "3333",
+  Tony: "4444",
+  Karim: "5555",
+};
 const MANAGER_CODE = "C&T"; // code très simple, juste pour la démo
 
-function Login({ onLogin, employees }) {
+function Login({ onLogin, employees, employeePins }) {
   const [mode, setMode] = useState("employee"); // "employee" ou "manager"
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  const [pin, setPin] = useState("");
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -21,6 +29,11 @@ function Login({ onLogin, employees }) {
     if (mode === "employee") {
       if (!employees.includes(name)) {
         setError("Cet employé n'existe pas dans la démo.");
+        return;
+      }
+      const expectedPin = employeePins[name];
+      if (!expectedPin || pin !== expectedPin) {
+        setError("Code personnel incorrect pour cet employé.");
         return;
       }
       onLogin({ role: "employee", name });
@@ -125,6 +138,22 @@ function Login({ onLogin, employees }) {
                   ))}
                 </select>
               </label>
+              <label style={{ fontSize: "0.9rem", fontWeight: 500 }}>
+                Code personnel
+                <input
+                  type="password"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                  placeholder="ex: 4 chiffres"
+                  style={{
+                    width: "100%",
+                    marginTop: "6px",
+                    padding: "8px 10px",
+                    borderRadius: "8px",
+                    border: "1px solid #cbd5f5",
+                  }}
+                />
+              </label>
             </>
           ) : (
             <label style={{ fontSize: "0.9rem", fontWeight: 500 }}>
@@ -174,9 +203,10 @@ function Login({ onLogin, employees }) {
 function App() {
   const [user, setUser] = useState(null); // { role: "employee" | "manager", name: string }
   const [employees, setEmployees] = useState(INITIAL_EMPLOYEES);
+  const [employeePins, setEmployeePins] = useState(INITIAL_PINS);
 
   if (!user) {
-    return <Login onLogin={setUser} employees={employees} />;
+    return <Login onLogin={setUser} employees={employees} employeePins={employeePins} />;
   }
 
   return (
@@ -190,14 +220,25 @@ function App() {
             <Planning
               user={user}
               employees={employees}
-              onAddEmployee={(name) =>
-                setEmployees((prev) =>
-                  name && !prev.includes(name.trim()) ? [...prev, name.trim()] : prev
-                )
-              }
-              onRemoveEmployee={(name) =>
-                setEmployees((prev) => prev.filter((emp) => emp !== name))
-              }
+              onAddEmployee={(rawName) => {
+                const name = rawName && rawName.trim();
+                if (!name) return;
+                setEmployees((prev) => (prev.includes(name) ? prev : [...prev, name]));
+                const pin = window.prompt(
+                  `Code personnel (PIN) pour ${name} (ex: 4 chiffres) :`,
+                  ""
+                );
+                if (pin) {
+                  setEmployeePins((prev) => ({ ...prev, [name]: pin }));
+                }
+              }}
+              onRemoveEmployee={(name) => {
+                setEmployees((prev) => prev.filter((emp) => emp !== name));
+                setEmployeePins((prev) => {
+                  const { [name]: _removed, ...rest } = prev;
+                  return rest;
+                });
+              }}
             />
           }
         />
